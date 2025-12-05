@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta Metodológica - Universidad Galileo</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+            color: #1c1917; /* stone-900 */
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Inter', sans-serif; }
+        .academic-text { font-family: 'Merriweather', serif; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes softPulse { 0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); } 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); } }
+        
+        .animate-enter { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-500 { animation-delay: 500ms; }
+
+        /* --- CHART CONTAINER --- */
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+
+        /* --- FLOWCHART SHAPES --- */
+        .flow-shape {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center;
+            text-align: center; font-size: 0.85rem; font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 20;
+        }
+        .flow-shape:hover { transform: scale(1.03) translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+        .shape-oval { border-radius: 50px; background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: white; padding: 12px 24px; width: 80%; margin: 0 auto; }
+        
+        .shape-rect { 
+            border-radius: 12px; background-color: white; border: 2px solid #e5e7eb; color: #374151; padding: 16px; width: 90%; margin: 0 auto; 
+            position: relative;
+        }
+        .shape-rect.active { border-color: #4f46e5; background-color: #eef2ff; color: #312e81; animation: softPulse 2s infinite; }
+
+        /* Sub-process Node */
+        .shape-sub-rect {
+            border-radius: 8px; background-color: #f8fafc; border: 2px dashed #cbd5e1; color: #64748b; padding: 10px; width: 85%; margin: 0 auto;
+            font-size: 0.75rem;
+        }
+        .shape-sub-rect.active { border-color: #6366f1; background-color: #e0e7ff; color: #312e81; }
+
+        /* Diamond */
+        .shape-diamond-wrapper {
+            width: 90px; height: 90px; margin: 10px auto; transform: rotate(45deg);
+            background-color: #fffbeb; border: 2px solid #d97706;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;
+        }
+        .shape-diamond-wrapper.active { background-color: #fcd34d; transform: rotate(45deg) scale(1.05); animation: softPulse 2s infinite; border-color: #b45309; }
+        .shape-diamond-content { transform: rotate(-45deg); font-size: 0.7rem; font-weight: bold; color: #92400e; width: 110px; text-align: center; line-height: 1.1; }
+
+        /* Connectors */
+        .connector-line { width: 3px; background: linear-gradient(to bottom, #d1d5db 50%, #9ca3af 50%); background-size: 100% 20px; height: 20px; margin: 0 auto; opacity: 0.7; position: relative; z-index: 0; }
+        .connector-arrow { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #9ca3af; margin: 0 auto; }
+        
+        /* Complex Lines (Feedback Loops) */
+        .loop-line-left {
+            position: absolute; left: 20px; top: 100px; bottom: 100px; width: 40px;
+            border-left: 3px dashed #9ca3af; border-bottom: 3px dashed #9ca3af; border-top: 3px dashed #9ca3af;
+            border-radius: 20px 0 0 20px; pointer-events: none; z-index: 0; opacity: 0.3;
+        }
+        .loop-label {
+            position: absolute; left: -10px; top: 50%; transform: rotate(-90deg) translateY(-50%);
+            background: #f5f5f4; padding: 4px; font-size: 0.6rem; color: #6b7280; font-weight: bold;
+        }
+
+        /* Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        .hover-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4 animate-enter">
+                <div class="w-10 h-10 bg-indigo-700 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-200">G</div>
+                <div>
+                    <h1 class="text-lg font-bold text-stone-800 leading-tight">Universidad Galileo</h1>
+                    <p class="text-xs text-stone-500 font-medium tracking-wide">MAESTRÍA EN PLANEACIÓN ESTRATÉGICA</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex space-x-8 text-sm font-semibold text-stone-600 animate-enter delay-100">
+                <a href="#modelo" class="hover:text-indigo-700 transition relative group py-2">
+                    Flujograma
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-600 transition-all group-hover:w-full"></span>
+                </a>
+                <a href="#analisis" class="hover:text-indigo-700 transition relative group py-2">
+                    Análisis Justificativo
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-600 transition-all group-hover:w-full"></span>
+                </a>
+                <a href="#dashboard" class="hover:text-indigo-700 transition relative group py-2">
+                    Indicadores
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-600 transition-all group-hover:w-full"></span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        
+        <!-- Hero Section with Student Info -->
+        <section class="bg-gradient-to-b from-stone-50 to-white pt-20 pb-16 px-4 relative overflow-hidden">
+            <!-- Background Decorations -->
+            <div class="absolute top-0 left-1/4 w-96 h-96 bg-indigo-100/50 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob"></div>
+            <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-100/50 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-2000"></div>
+
+            <div class="max-w-5xl mx-auto text-center relative z-10">
+                <span class="inline-block px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold tracking-widest uppercase mb-8 shadow-sm animate-enter">Propuesta Metodológica</span>
+                
+                <h2 class="text-5xl md:text-6xl font-extrabold text-stone-900 mb-8 leading-tight animate-enter delay-100 tracking-tight">
+                    Modelo de Planificación <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-teal-600">Prospectiva Sistémica</span>
+                </h2>
+                
+                <p class="text-xl text-stone-600 leading-relaxed max-w-3xl mx-auto mb-12 animate-enter delay-200 font-light">
+                    Diseño de una metodología integral para la Universidad Galileo, fundamentada en la "Escalera Estratégica" de Chung Pinzás, orientada a la construcción proactiva del futuro educativo.
+                </p>
+                
+                <!-- Student Card -->
+                <div class="animate-enter delay-300 inline-block">
+                    <div class="flex flex-col md:flex-row items-center bg-white/80 backdrop-blur rounded-2xl p-6 shadow-xl border border-stone-100 transform transition hover:-translate-y-1">
+                        <div class="md:mr-6 mb-4 md:mb-0">
+                            <div class="w-16 h-16 rounded-full bg-stone-200 flex items-center justify-center text-2xl border-4 border-white shadow-md">
+                                👨‍🎓
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">Presentado por</p>
+                            <h3 class="text-2xl font-bold text-stone-800">José Armando de León Uz</h3>
+                            <p class="text-stone-500 font-mono mt-1 text-sm bg-stone-100 inline-block px-2 py-0.5 rounded">Carnet: 16012029</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Flowchart Section -->
+        <section id="modelo" class="py-20 px-4 max-w-7xl mx-auto">
+            <div class="mb-12 flex flex-col md:flex-row justify-between items-end border-b border-stone-200 pb-6">
+                <div>
+                    <h3 class="text-3xl font-bold text-stone-800">Flujograma del Proceso</h3>
+                    <p class="text-stone-500 mt-2 max-w-xl">Modelo visual de las etapas secuenciales. Haga clic en los nodos para ver el detalle técnico.</p>
+                </div>
+                <div class="hidden md:block text-right">
+                    <span class="text-xs font-bold text-stone-400 uppercase tracking-wider">Metodología</span>
+                    <p class="text-indigo-600 font-bold">Escalera Estratégica</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[850px]">
+                
+                <!-- Left Column: VISUAL FLOWCHART -->
+                <div class="lg:col-span-4 bg-stone-50 rounded-2xl border border-stone-200 p-6 overflow-y-auto custom-scroll relative shadow-inner">
+                    <div class="loop-line-left"><span class="loop-label">Retroalimentación Sistémica</span></div>
+                    <div class="relative z-10 flex flex-col gap-1 pb-10 pl-6" id="flow-container">
+                        
+                        <!-- START -->
+                        <div onclick="selectPhase('start')" class="cursor-pointer mb-1 group" data-id="start">
+                            <div class="shape-oval shadow-lg text-xs hover:bg-indigo-700 transition-colors">INICIO DEL CICLO</div>
+                            <div class="connector-line h-4 mt-2"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+
+                        <!-- PHASE 0: PROSPECTIVE -->
+                        <div class="p-3 border-2 border-dashed border-indigo-200 rounded-xl mb-2 bg-white/50 backdrop-blur-sm hover:border-indigo-400 transition-colors">
+                            <p class="text-[10px] font-bold text-indigo-500 uppercase text-center mb-3">Macro-Fase: Prospectiva</p>
+                            <div onclick="selectPhase('0_1')" id="node-0_1" class="shape-sub-rect cursor-pointer mb-2" data-id="0_1">0.1 Análisis de Tendencias</div>
+                            <div class="connector-line h-2"></div>
+                            <div onclick="selectPhase('0_2')" id="node-0_2" class="shape-rect cursor-pointer mb-1 border-indigo-200" data-id="0_2">
+                                <div class="font-bold text-xs uppercase text-indigo-600 mb-1">Fase 0.2</div>
+                                <div class="font-semibold text-sm">Escenario Apuesta</div>
+                            </div>
+                        </div>
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow mb-2"></div>
+
+                        <!-- PHASE 1 -->
+                        <div onclick="selectPhase(1)" id="node-1" class="shape-rect cursor-pointer mb-2" data-id="1">
+                            <div class="font-bold text-xs uppercase text-stone-500 mb-1">Fase 1</div>
+                            <div class="font-semibold text-sm">Diagnóstico Situacional</div>
+                        </div>
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow mb-2"></div>
+
+                        <!-- GATEWAY 1 -->
+                        <div onclick="selectPhase('gate1')" id="node-gate1" class="shape-diamond-wrapper mb-2" data-id="gate1">
+                            <div class="shape-diamond-content">¿Capacidad<br>Suficiente?</div>
+                        </div>
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow mb-2"></div>
+
+                        <!-- PHASE 2 -->
+                        <div onclick="selectPhase(2)" id="node-2" class="shape-rect cursor-pointer mb-2" data-id="2">
+                            <div class="font-bold text-xs uppercase text-stone-500 mb-1">Fase 2</div>
+                            <div class="font-semibold text-sm">Formulación Estratégica</div>
+                        </div>
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow mb-2"></div>
+
+                        <!-- PHASE 3 -->
+                        <div onclick="selectPhase(3)" id="node-3" class="shape-rect cursor-pointer mb-2" data-id="3">
+                            <div class="font-bold text-xs uppercase text-stone-500 mb-1">Fase 3</div>
+                            <div class="font-semibold text-sm">Planificación Operativa</div>
+                        </div>
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow mb-2"></div>
+
+                        <!-- PHASE 4 -->
+                        <div onclick="selectPhase(4)" id="node-4" class="shape-rect cursor-pointer mb-2" data-id="4">
+                            <div class="font-bold text-xs uppercase text-stone-500 mb-1">Fase 4</div>
+                            <div class="font-semibold text-sm">Implementación</div>
+                        </div>
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow mb-2"></div>
+
+                        <!-- PHASE 5 -->
+                        <div onclick="selectPhase(5)" id="node-5" class="shape-diamond-wrapper mb-2" data-id="5">
+                            <div class="shape-diamond-content">Evaluación<br>de Metas</div>
+                        </div>
+                        <div class="text-center text-[10px] font-bold text-stone-400 mb-2">Retroalimentación</div>
+                        <div class="connector-line h-4"></div>
+                        <div class="connector-arrow mb-2"></div>
+
+                        <!-- END -->
+                        <div onclick="selectPhase('end')" class="cursor-pointer mb-2 group" data-id="end">
+                            <div class="shape-oval bg-teal-600 shadow-lg text-xs" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);">CIERRE / NUEVO CICLO</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: DETAIL VIEW -->
+                <div class="lg:col-span-8 bg-white rounded-2xl shadow-xl border border-stone-100 p-8 flex flex-col relative overflow-hidden h-[850px]">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-stone-50 rounded-bl-full -mr-20 -mt-20 z-0 opacity-50"></div>
+                    <div id="detail-content" class="flex-grow space-y-6 h-full overflow-y-auto custom-scroll relative z-10 pr-4">
+                        <!-- Content injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALYSIS SECTION (New Request) -->
+        <section id="analisis" class="py-20 bg-stone-50 border-t border-stone-200">
+            <div class="max-w-4xl mx-auto px-6">
+                <div class="bg-white rounded-xl shadow-lg p-10 md:p-14 border border-stone-100">
+                    
+                    <!-- Document Header -->
+                    <div class="border-b-2 border-stone-100 pb-8 mb-8 text-center">
+                        <span class="text-xs font-bold text-stone-400 uppercase tracking-widest">Documento de Análisis</span>
+                        <h2 class="text-3xl font-bold text-stone-900 mt-2 mb-4 font-serif">Justificación del Modelo Metodológico para la Universidad Galileo</h2>
+                        <div class="flex justify-center items-center gap-4 text-sm text-stone-500">
+                            <p><strong>Autor:</strong> José Armando de León Uz</p>
+                            <span class="text-stone-300">|</span>
+                            <p><strong>Fecha:</strong> Diciembre 05 de 2025</p>
+                        </div>
+                    </div>
+
+                    <!-- Academic Content -->
+                    <div class="prose prose-stone prose-lg max-w-none academic-text text-stone-700">
+                        
+                        <h3 class="text-indigo-900 font-bold font-sans">1. Introducción</h3>
+                        <p>
+                            La educación superior contemporánea enfrenta un entorno VUCA (Volátil, Incierto, Complejo y Ambiguo), caracterizado por la disrupción tecnológica acelerada. En este contexto, la planificación estratégica tradicional, basada únicamente en la proyección de tendencias pasadas (forecasting), resulta insuficiente. El presente análisis justifica la adopción de un modelo de <strong>Prospectiva Estratégica</strong> para la Universidad Galileo, fundamentado en la teoría de Alfonso Chung Pinzás (2009) y el concepto de la "Escalera Estratégica".
+                        </p>
+
+                        <h3 class="text-indigo-900 font-bold font-sans mt-8">2. Pertinencia del Modelo</h3>
+                        <p>
+                            La pertinencia de integrar una <strong>Fase 0 de Prospectiva</strong> antes del diagnóstico situacional radica en la naturaleza innovadora de la Universidad Galileo. Como institución líder en tecnología, Galileo no puede permitirse ser reactiva. Chung Pinzás argumenta que el Plan Estratégico a menudo carece de un "norte" más allá de sus propios plazos administrativos.
+                        </p>
+                        <p>
+                            El modelo propuesto soluciona el "vacío estratégico" que ocurre al finalizar un plan. Al definir un <strong>Escenario Apuesta</strong> (Visión 2035) independiente de los ciclos operativos cortos, la universidad asegura que sus inversiones en laboratorios, currícula y capacitación docente respondan a megatendencias futuras (como la Inteligencia Artificial Generativa o la Computación Cuántica) y no solo a la demanda actual del mercado.
+                        </p>
+
+                        <h3 class="text-indigo-900 font-bold font-sans mt-8">3. Viabilidad Institucional</h3>
+                        <p>
+                            La implementación de este modelo es altamente viable dado el perfil técnico de la Universidad Galileo. La metodología exige el uso de herramientas de análisis estructural (como MICMAC) y juego de actores (MACTOR), competencias que son inherentes al capital humano de la institución.
+                        </p>
+                        <ul class="list-disc pl-5 space-y-2 marker:text-indigo-500">
+                            <li><strong>Capacidad Técnica:</strong> La universidad cuenta con institutos de investigación capaces de liderar la vigilancia tecnológica requerida en la Fase 0.1.</li>
+                            <li><strong>Estructura Modular:</strong> El flujograma diseñado respeta las fases operativas tradicionales (Fases 3 y 4), lo que facilita la adopción por parte del personal administrativo sin requerir una reingeniería total de procesos, sino una reorientación estratégica inicial.</li>
+                        </ul>
+
+                        <h3 class="text-indigo-900 font-bold font-sans mt-8">4. Impacto Esperado</h3>
+                        <p>
+                            La adopción de este enfoque sistémico generará impactos tangibles en tres dimensiones:
+                        </p>
+                        <ol class="list-decimal pl-5 space-y-2 marker:text-indigo-800 font-bold">
+                            <li class="pl-2"><span class="font-normal"><strong>Continuidad y Coherencia:</strong> Se elimina la discontinuidad entre periodos de gestión. Cada Plan Estratégico (peldaño de la escalera) se convierte en un paso acumulativo hacia el Escenario Apuesta, evitando los "golpes de timón" injustificados.</span></li>
+                            <li class="pl-2"><span class="font-normal"><strong>Optimización de Recursos:</strong> Al validar la capacidad mediante compuertas de decisión (Gateway 1), se evita la asignación de presupuestos a proyectos que no son viables o que no contribuyen al futuro deseado.</span></li>
+                            <li class="pl-2"><span class="font-normal"><strong>Liderazgo Regional:</strong> Al anticipar tendencias educativas en lugar de reaccionar a ellas, la Universidad Galileo consolidará su posición como referente de innovación en Centroamérica.</span></li>
+                        </ol>
+
+                        <div class="bg-indigo-50 border-l-4 border-indigo-600 p-6 mt-10 rounded-r-lg not-prose">
+                            <p class="font-sans text-indigo-900 italic font-medium m-0">
+                                "El futuro no es único e inevitable... la esencia de la prospectiva estratégica consiste en construir el futuro deseado." — Alfonso Chung Pinzás.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="py-20 bg-white border-t border-stone-200">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="mb-10 text-center">
+                    <span class="text-amber-600 font-bold tracking-wider text-xs uppercase bg-amber-50 px-3 py-1 rounded-full border border-amber-100">Fase 5: Evaluación</span>
+                    <h2 class="text-3xl font-bold text-stone-800 mt-4">Indicadores de Desempeño (KPIs)</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-lg hover-card">
+                        <div class="chart-container"><canvas id="kpiChart1"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-lg hover-card">
+                        <div class="chart-container"><canvas id="kpiChart2"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-stone-900 text-stone-400 py-12 text-center text-sm border-t border-stone-800 relative overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-indigo-900 to-transparent opacity-50"></div>
+        <div class="max-w-7xl mx-auto px-4 relative z-10">
+            <div class="mb-8 flex flex-col items-center animate-enter">
+                <div class="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-stone-500 font-bold text-xl mb-4 shadow-inner border border-stone-700">G</div>
+                <h4 class="text-xl font-bold text-stone-200">José Armando de León Uz</h4>
+                <p class="text-indigo-400 font-mono mt-1 text-base">Carnet: 16012029</p>
+                <p class="text-stone-600 text-xs mt-2 uppercase tracking-wide">Universidad Galileo | Facultad de Ciencia, Tecnología e Industria</p>
+            </div>
+            <div class="border-t border-stone-800 pt-8 text-xs text-stone-600">
+                <p>© 2025. Generado para fines académicos basado en "Prospectiva Estratégica" de Chung Pinzás.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // --- DATA STORE ---
+        const phases = {
+            'start': {
+                title: "INICIO DEL CICLO", type: "Hito Inicial",
+                description: "El Consejo Directivo activa formalmente el proceso de planificación.",
+                actors: ["Consejo Directivo", "Rectoría"],
+                inputs: ["Reporte de Cierre Ciclo Anterior", "Mandato Institucional"],
+                process: ["Convocatoria oficial", "Definición de alcance y plazos"],
+                outputs: ["Cronograma Maestro", "Equipo Planificador Asignado"],
+                color: "text-indigo-600"
+            },
+            '0_1': {
+                title: "Fase 0.1: TENDENCIAS Y FUTURO", type: "Sub-Proceso Prospectivo",
+                description: "Investigación de megatendencias (IA, EdTech) antes de mirar adentro.",
+                actors: ["Panel de Expertos", "Institutos de Investigación"],
+                inputs: ["Informes Globales (UNESCO, WEF)", "Vigilancia Tecnológica"],
+                process: ["Método Delphi", "Análisis Estructural (MICMAC)"],
+                outputs: ["Mapa de Megatendencias", "Variables Clave"],
+                color: "text-indigo-500"
+            },
+            '0_2': {
+                title: "Fase 0.2: ESCENARIO APUESTA", type: "Hito Crítico",
+                description: "Definición del futuro deseado ('Visión 2035').",
+                actors: ["Alta Dirección", "Stakeholders Clave"],
+                inputs: ["Escenarios Futuribles", "Variables Clave"],
+                process: ["Talleres de Prospectiva", "Selección de Escenario"],
+                outputs: ["Documento 'Visión Galileo 2035'"],
+                color: "text-indigo-700"
+            },
+            1: {
+                title: "Fase 1: DIAGNÓSTICO SITUACIONAL", type: "Proceso Analítico",
+                description: "Análisis de brechas entre el presente y el futuro deseado.",
+                actors: ["Comité de Planificación"],
+                inputs: ["Visión 2035", "Estadísticas Internas"],
+                process: ["FODA Avanzado", "Análisis de Capacidades"],
+                outputs: ["Informe de Brechas (Gap Analysis)"],
+                color: "text-stone-700"
+            },
+            'gate1': {
+                title: "DECISIÓN: VIABILIDAD", type: "Compuerta de Control",
+                description: "¿Tiene la universidad la capacidad actual para iniciar la estrategia?",
+                actors: ["Rectoría", "Finanzas"],
+                inputs: ["Informe de Brechas", "Proyección Financiera"],
+                process: ["Revisión de Viabilidad"],
+                outputs: ["Aprobación de Estrategia", "Solicitud de Ajuste"],
+                color: "text-amber-600"
+            },
+            2: {
+                title: "Fase 2: FORMULACIÓN ESTRATÉGICA", type: "Proceso Creativo",
+                description: "Diseño de objetivos, metas y estrategias.",
+                actors: ["Decanos", "Directores"],
+                inputs: ["Diagnóstico Validado"],
+                process: ["Talleres Estratégicos", "Mapa Estratégico"],
+                outputs: ["Plan Estratégico Institucional (PEI)"],
+                color: "text-stone-700"
+            },
+            3: {
+                title: "Fase 3: PLANIFICACIÓN OPERATIVA", type: "Proceso Táctico",
+                description: "Asignación de recursos y tiempos a nivel de facultad.",
+                actors: ["Jefes de Departamento"],
+                inputs: ["PEI", "Techos Presupuestarios"],
+                process: ["Elaboración de POAs", "Presupuestación"],
+                outputs: ["POAs Aprobados"],
+                color: "text-stone-700"
+            },
+            4: {
+                title: "Fase 4: IMPLEMENTACIÓN", type: "Ejecución",
+                description: "Puesta en marcha de los proyectos educativos.",
+                actors: ["Comunidad Universitaria"],
+                inputs: ["POAs", "Recursos"],
+                process: ["Gestión de Proyectos", "Docencia"],
+                outputs: ["Resultados Académicos", "Investigación"],
+                color: "text-stone-700"
+            },
+            5: {
+                title: "Fase 5: EVALUACIÓN", type: "Control y Aprendizaje",
+                description: "Medición de avance y ajustes.",
+                actors: ["Unidad de Calidad"],
+                inputs: ["KPIs", "Resultados"],
+                process: ["Auditoría Académica", "Análisis de Datos"],
+                outputs: ["Informe de Desempeño", "Plan de Mejora"],
+                color: "text-amber-600"
+            },
+            'end': {
+                title: "CIERRE Y NUEVO CICLO", type: "Hito Final",
+                description: "Capitalización del aprendizaje para el siguiente periodo.",
+                actors: ["Consejo Directivo"],
+                inputs: ["Informe de Evaluación"],
+                process: ["Revisión de Lecciones Aprendidas"],
+                outputs: ["Estrategia Actualizada"],
+                color: "text-teal-600"
+            }
+        };
+
+        // --- UI LOGIC ---
+        function selectPhase(id) {
+            // Visual Reset
+            document.querySelectorAll('.shape-rect, .shape-sub-rect, .shape-diamond-wrapper').forEach(el => {
+                el.classList.remove('active', 'ring-2', 'ring-indigo-500', 'ring-amber-500');
+            });
+            document.querySelectorAll('.shape-oval').forEach(el => el.classList.remove('ring-4', 'ring-indigo-300'));
+
+            // Visual Activate
+            const node = document.getElementById(`node-${id}`);
+            if (node) {
+                node.classList.add('active');
+                if (id.toString().includes('gate') || id === 5) {
+                    node.classList.add('ring-2', 'ring-amber-500');
+                } else {
+                    node.classList.add('ring-2', 'ring-indigo-500');
+                }
+            } else if (id === 'start' || id === 'end') {
+                const startEndNode = document.querySelector(`[onclick="selectPhase('${id}')"] .shape-oval`);
+                if(startEndNode) startEndNode.classList.add('ring-4', 'ring-indigo-300');
+            }
+
+            // Content Injection
+            const data = phases[id];
+            const contentDiv = document.getElementById('detail-content');
+            contentDiv.innerHTML = ''; // Clear
+
+            let icon = '⚡';
+            if(data.type.includes('Proceso') || data.type.includes('Sub')) icon = '⚙️';
+            if(data.type.includes('Decisión') || data.type.includes('Compuerta')) icon = '⚖️';
+            if(data.type.includes('Inicio') || data.type.includes('Fin')) icon = '🏁';
+
+            const html = `
+                <div class="border-b border-stone-100 pb-6 mb-6 animate-enter">
+                    <span class="px-3 py-1 bg-gradient-to-r from-stone-100 to-stone-200 text-stone-600 text-xs font-bold rounded-full uppercase tracking-wider shadow-sm mb-3 inline-block">${data.type}</span>
+                    <h2 class="text-3xl font-bold ${data.color} flex items-center gap-3">
+                        <span class="text-4xl filter drop-shadow-sm">${icon}</span> ${data.title}
+                    </h2>
+                    <p class="text-lg text-stone-500 mt-4 font-light leading-relaxed">${data.description}</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-enter delay-100">
+                    <div class="bg-blue-50/50 rounded-xl p-6 border border-blue-100 hover:shadow-md transition-all">
+                        <h4 class="font-bold text-blue-800 mb-4 text-xs uppercase flex items-center"><span class="mr-2 text-lg">👥</span> Actores</h4>
+                        <ul class="space-y-2">${data.actors.map(a => `<li class="text-sm text-blue-900 font-medium">• ${a}</li>`).join('')}</ul>
+                    </div>
+                    <div class="bg-emerald-50/50 rounded-xl p-6 border border-emerald-100 hover:shadow-md transition-all">
+                        <h4 class="font-bold text-emerald-800 mb-4 text-xs uppercase flex items-center"><span class="mr-2 text-lg">📥</span> Entradas</h4>
+                        <ul class="space-y-2">${data.inputs.map(i => `<li class="text-sm text-emerald-900 font-medium">→ ${i}</li>`).join('')}</ul>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 border border-stone-200 md:col-span-2 shadow-sm hover:shadow-md transition-all">
+                        <h4 class="font-bold text-stone-700 mb-4 text-xs uppercase flex items-center"><span class="mr-2 text-lg">⚙️</span> Proceso Detallado</h4>
+                        <div class="flex flex-wrap gap-2">
+                            ${data.process.map(p => `<span class="px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700 hover:bg-stone-100 transition-colors">${p}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="bg-amber-50/50 rounded-xl p-6 border border-amber-100 md:col-span-2 hover:shadow-md transition-all">
+                        <h4 class="font-bold text-amber-800 mb-4 text-xs uppercase flex items-center"><span class="mr-2 text-lg">📤</span> Salidas (Entregables)</h4>
+                        <ul class="space-y-3">${data.outputs.map(o => `<li class="text-sm text-amber-900 font-semibold flex items-center bg-white/60 p-2 rounded border border-amber-100/50"><span class="mr-2">📄</span> ${o}</li>`).join('')}</ul>
+                    </div>
+                </div>
+            `;
+            contentDiv.innerHTML = html;
+        }
+
+        // --- CHARTS ---
+        function initCharts() {
+            const commonOptions = { responsive: true, maintainAspectRatio: false, animation: { duration: 1500, easing: 'easeOutQuart' } };
+            
+            new Chart(document.getElementById('kpiChart1'), {
+                type: 'line',
+                data: {
+                    labels: ['2025', '2026', '2027', '2028'],
+                    datasets: [{ 
+                        label: 'Retención Estudiantil (%)', 
+                        data: [82, 85, 88, 92], 
+                        borderColor: '#4f46e5', 
+                        borderWidth: 3,
+                        backgroundColor: (ctx) => {
+                            const bg = ctx.chart.ctx.createLinearGradient(0,0,0,300);
+                            bg.addColorStop(0, 'rgba(79, 70, 229, 0.2)');
+                            bg.addColorStop(1, 'rgba(79, 70, 229, 0)');
+                            return bg;
+                        },
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { ...commonOptions, scales: { y: { min: 75 } } }
+            });
+
+            new Chart(document.getElementById('kpiChart2'), {
+                type: 'bar',
+                data: {
+                    labels: ['FISICC', 'FACTI', 'FABIQ'],
+                    datasets: [{ 
+                        label: 'Proyectos Innovación', 
+                        data: [18, 12, 9], 
+                        backgroundColor: ['#4f46e5', '#818cf8', '#c7d2fe'],
+                        borderRadius: 6
+                    }]
+                },
+                options: commonOptions
+            });
+        }
+
+        window.addEventListener('load', () => { selectPhase('start'); initCharts(); });
+    </script>
+</body>
+</html>
